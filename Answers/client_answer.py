@@ -12,29 +12,49 @@ import http.client
 import json
 
 def test_connection():
+    _keyfile = "/home/user/Desktop/Simple-Python-HTTP-Server/local_keys/myCA.key"
+    _certfile = "/home/user/Desktop/Simple-Python-HTTP-Server/local_keys/myCA.pem"
     # https://docs.python.org/3/library/http.client.html
 
     url = "127.0.0.1"
     port = 443
     HTTP_Methods = ["GET","POST"]
     for method in HTTP_Methods:
-        conn = http.client.HTTPConnection(
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        context.load_cert_chain(
+            certfile=_certfile,
+            keyfile=_keyfile,
+            password="YOUR_CERT_PASSWORD_HERE!"
+        )
+        ssl._create_default_https_context = ssl._create_unverified_context
+
+        http_client = http.client.HTTPSConnection(
             url,
             port
-        ) 
+        )
+        """
+        http_client.sock = context.wrap_socket(
+            sock=http_client.sock,
+            server_side=False,
+            do_handshake_on_connect=True,
+            suppress_ragged_eofs=False,
+            server_hostname=None,
+        )
+        """
+
         headers = {'Content-type': 'application/json'}
         data = {'JUNK':'Testing...'}
         data_json = json.dumps(data)
-        conn.request(
+        http_client.request(
             method,
             "/",
             data_json,
             headers
         )
-        response = conn.getresponse()
+        response = http_client.getresponse()
         print("Status: {} and reason: {}".format(response.status, response.reason))
 
-        conn.close()
+        http_client.close()
 
     """
     with requests.Session() as session:

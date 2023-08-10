@@ -10,6 +10,7 @@ import time
 class RequestHandler(BaseHTTPRequestHandler):
 
     def do_POST(self):
+        print("Handling POST")
         content_len = self.headers.get('Content-Length')
         try:
             request_body = self.rfile.read(int(content_len))
@@ -30,6 +31,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         return
 
     def do_GET(self):
+        print("Handling GET")
         content_len = self.headers.get('Content-Length')
         try:
             request_body = self.rfile.read(int(content_len))
@@ -64,59 +66,34 @@ def run(server_class=HTTPServer, handler_class=BaseHTTPRequestHandler):
     
     server = ("127.0.0.1", 443)
 
-    with rqst.Session() as ssl_sesh:
-        # Open up the server
-        # https://docs.python.org/3/library/http.server.html
-        
-        http_serv = HTTPServer(server, RequestHandler)
-
-        context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-        context.load_cert_chain(certfile=_certfile,keyfile=_keyfile)
-
-        http_serv.socket = context.wrap_socket(
-            sock=http_serv.socket,
-            server_side=True,
-            do_handshake_on_connect=False,
-            suppress_ragged_eofs=False,
-            server_hostname=None,
-        )
-        #http_serv.socket.load_cert_chain(certfile=_certfile,keyfile=_keyfile)
-        
-        while(requests > 0):
-            requests -= 1
-            print("Handling a HTTP request.")
-            http_serv.handle_request()
-            time.sleep(3)
-        
-        print("All out of requests!")
+    # Open up the server
+    # https://docs.python.org/3/library/http.server.html
     
-    """
+    http_serv = HTTPServer(server, RequestHandler)
+
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-    context.load_cert_chain(certfile=_certfile,keyfile=_keyfile)
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0) as sock:
-        sock.bind(server)
-        print("\nWaiting for a client...\n")
-        sock.listen(5)
-        with context.wrap_socket(sock, server_side=True) as ssock:
-            conn, addr = ssock.accept()
-            print(conn)
-            print(addr)
-            #ssock.handle_request()
-            #conn.send("Test!".encode('utf8'))
-    """
+    context.load_cert_chain(
+        certfile=_certfile,
+        keyfile=_keyfile,
+        password="YOUR_CERT_PASSWORD_HERE!"
+    )
+    ssl._create_default_https_context = ssl._create_unverified_context
 
-    """
-    httpd = HTTPServer(server, RequestHandler)
+    http_serv.socket = context.wrap_socket(
+        sock=http_serv.socket,
+        server_side=True,
+        do_handshake_on_connect=True,
+        suppress_ragged_eofs=False,
+        server_hostname=None,
+    )
     
-    httpd.socket = ssl.wrap_socket(httpd.socket, keyfile, certfile, server_side=True, ssl_version=ssl.PROTOCOL_TLSv1)
+    while(requests > 0):
+        requests -= 1
+        print("Handling a HTTP request.")
+        #time.sleep(3)
+        http_serv.handle_request()
     
-    httpd.socket = ssl.SSLContext.wrap_socket()
-    
-    
-    while(commands > 0):
-        httpd.handle_request()
-        print("still connecting...")
-    """
+    print("All out of requests!")
 
 def main():
     run()
